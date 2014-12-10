@@ -1,0 +1,1063 @@
+package graphics.demo.game;
+
+import graphics.demo.framework.Game;
+import graphics.demo.framework.Graphics;
+import graphics.demo.framework.Graphics.PixmapFormat;
+import graphics.demo.framework.Input.TouchEvent;
+import graphics.demo.framework.Pixmap;
+import graphics.demo.framework.Screen;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import android.graphics.Color;
+import android.graphics.Typeface;
+
+/* Name: MainScreen.java
+ * Date: 27/06/2013
+ * Author: Benedict James Winchester
+ * Purpose: YOLO (actually OOLO for 'One only lives once' :)
+ */
+
+public class BouncingSquares extends Screen { 
+
+	static int MAX_NUM_SQUARES = 1000;
+	static double versionNumber = 1.4;
+	static boolean developer = true;
+	public boolean nightly = true;
+	public boolean magnetEnable = false;
+	static int DEFAULT_NUM_SQUARES = 0;
+	static int DEFAULT_NUM_MAGNETS = 0;
+	public int difLevel = 0;
+	
+	static int MAX_INITIAL_SPEED = 4;
+	public boolean touchTrue = false;
+	public boolean touchTrueAlpha = false;
+	public boolean touchTrueBeta = false;
+	public int menuWidth = 0;
+	public int menuHeight = 0;
+	public int menuDoubleHeight = 0;
+	public boolean errorA;
+	public int score  = 0;
+	public int highScore = 0;
+	public boolean clear = false;
+	public boolean clearM = false;
+	public boolean invert = false;
+	public boolean magnetsFree = false;
+	static int currentNumSquares = DEFAULT_NUM_SQUARES;
+	static int currentNumMagnets = DEFAULT_NUM_MAGNETS;
+	static int maxNumMagnets = 3;
+	public int leeWay = 45;
+	public String message = null;
+	
+//	This generates a new ArrayList for the values of the square objects
+	ArrayList<Object> shapes = new ArrayList<Object>();
+	ArrayList<Object> magnets = new ArrayList<Object>();
+	ArrayList<Object> nomTeleport = new ArrayList<Object>();
+	
+	
+	public static Pixmap image;
+	public static Pixmap magnetImage;
+			
+    public BouncingSquares(Game game) 
+    {    	
+        super(game);
+        
+        Random random = new Random();
+        
+    	Graphics g = game.getGraphics();    	
+		image = g.newPixmap("ball.png", PixmapFormat.ARGB4444);
+		magnetImage = g.newPixmap("ball3.png", PixmapFormat.ARGB4444);
+		Assets.font = Typeface.createFromAsset(game.getAssets(), "fonts/electrolize.ttf");  
+
+		//This assigns the initial values for the squares coordinates and vectors.
+        for (int b=0;b<currentNumSquares;b++) {
+
+        	
+        	double x = random.nextInt(UtilConstants.SCREEN_WIDTH-image.getWidth())+1;
+        	double y = random.nextInt(UtilConstants.SCREEN_HEIGHT-image.getHeight())+1;
+        
+        	double xVector = random.nextInt(MAX_INITIAL_SPEED)+1;
+        	double yVector = random.nextInt(MAX_INITIAL_SPEED)+1;
+        	int name = b;
+        	
+        	Square square = new Square(x, y, xVector, yVector, name, image, 0);
+        	shapes.add(square);
+        }
+        
+        //This makes sure that none of the squares are initially colliding, and then adjusts their positioins to compensate.
+        for(int i = 0; i < currentNumSquares;i++)
+        {
+        	for(int j = 0 + i + 1; j < currentNumSquares; j++)
+        	{
+        		Square squareI = (Square)shapes.get(i);
+        		Square squareJ = (Square)shapes.get(j);
+        		
+	        	if(((squareI.x >= squareJ.x - image.getWidth() ) && squareI.x <= squareJ.x + image.getWidth()) &&
+	        	   ((squareI.y >= squareJ.y - image.getHeight()) && squareI.y <= squareJ.y + image.getHeight()))
+	        	{
+	        		while((squareI.x >= squareJ.x-image.getWidth())&& squareI.x <= squareJ.x+image.getWidth())
+	        		{
+	        			squareI.x = squareI.x + image.getWidth() + 1;
+	        		}
+	        	}
+        	}
+        }
+    }
+    
+    //The intro part only takes a couple of seconds and isn't skippable 
+    @Override 
+    public void update(float deltaTime) 
+    {
+        Random random = new Random();
+        
+//      This code recalculates the squares' positions and their bouncing
+        for(int i = 0; i < shapes.size(); i++)
+        {
+        	Square squareI = (Square)shapes.get(i);
+        	if(squareI.teleport == true)
+        	{
+        		squareI.freeze();
+        		teleport(squareI);
+        	}
+        	else if (squareI.teleport == false)
+        	{
+            	squareI.recalculate();
+        	}
+        	else if (squareI.magnetCount >= 1)
+        	{
+        		if(squareI.overEdge >= 1)
+        		{
+        			teleport(squareI);
+        			score = score - 1;
+        		}
+        	}
+        }
+        for(int i = 0; i<currentNumMagnets; i++)
+        {
+        	Magnet magnetI = (Magnet)magnets.get(i);
+        	magnetI.recalculate();
+        }
+        
+//      This loops through all of the squares
+        for(int i = 0 ; i < currentNumSquares; i ++)
+        {
+        	Square squareI = (Square)shapes.get(i);
+        	boolean glitching = false;
+        		for(int j = i + 1 ; j < currentNumSquares; j++)
+	        	{
+	        		Square squareJ = (Square)shapes.get(j);
+//     		   		Now, this will test to see whether the squares overlap
+	        		boolean overlap = squareI.overlaps(squareJ);
+	        		if(overlap == true && squareJ.teleport == false)
+	        		{
+//        			If they overlap and their counter is zero,
+//        			Then the collision logic applies and 1 is added to the counter
+	        			if(squareI.glitch == 0 && squareJ.glitch == 0)
+	        			{
+	        				squareI.collide(squareJ);
+	        			}
+//						1 is then added to the counter
+        				glitching = true;
+	        		}
+	           	}
+//        	If the square collides with no other squares, its counter
+//        	is reset to 0
+        	if(glitching == false)
+        	{
+        		squareI.glitch = 0;
+        	}
+        }
+        if(magnetEnable == true)
+        	{
+        	for(int i = 0 ; i < currentNumMagnets; i ++)
+	        {
+	        	Magnet magnetI = (Magnet)magnets.get(i);
+	        	boolean glitching = false;
+	        		for(int j = i + 1 ; j < currentNumMagnets; j++)
+		        	{
+		        		Magnet magnetJ = (Magnet)magnets.get(j);
+	//     		   		Now, this will test to see whether the magnets overlap
+		        		boolean overlap = magnetI.overlaps(magnetJ);
+		        		if(overlap == true && magnetJ.teleport == false)
+		        		{
+	//        			If they overlap and their counter is zero,
+	//        			Then the collision logic applies and 1 is added to the counter
+		        			if(magnetI.glitch == 0 && magnetJ.glitch == 0)
+		        			{
+		        				magnetI.collide(magnetJ);
+		        			}
+	//						1 is then added to the counter
+	        				glitching = true;
+		        		}
+		           	}
+	//        	If the magnet collides with no other squares, its counter
+	//        	is reset to 0
+	        	if(glitching == false)
+	        	{
+	        		magnetI.glitch = 0;
+	        	}
+	        }
+        	}
+        
+        if(magnetEnable == true)
+        {
+	        for(int i = 0 ; i < currentNumMagnets; i ++)
+	        {
+	        	Magnet magnetI = (Magnet)magnets.get(i);
+	        	boolean glitching = false;
+	        		for(int j = 0 ; j < shapes.size(); j++)
+		        	{
+		        		Square squareJ = (Square)shapes.get(j);
+	//     		   		Now, this will test to see whether the magnets overlap
+		        		boolean overlap = magnetI.nomNomNom(squareJ);
+		        		if(overlap == true && squareJ.teleport == false && magnetI.teleport == false
+		        				&& magnetI.squareCount == 0
+		        				&& squareJ.magnetCount == 0)
+		        		{
+	//        			If they overlap and their counter is zero,
+	//        			Then the collision logic applies and 1 is added to the counter
+//		        			if(squareJ.magnetCount == 0)
+//		        			{
+//		        				magnetI.dif(squareJ);
+//		        			}
+//		        			if(magnetI.onscreen() == true
+//		        					&& squareJ.onscreen() == true)
+//		        			{
+//			        			magnetI.stickSquare(squareJ);
+//		        				glitching = true;
+//		        			}
+//		        			if(squareJ.onscreen() == false)
+//		        			{
+//		        				teleport(squareJ);
+//		        				score = score - 1;
+//		        				clear = true;
+//		        				currentNumSquares = currentNumSquares - 1;
+//		        			}
+		        			squareJ.reverseVector();
+		        			magnetI.squareCount = magnetI.squareCount + 1;
+		        			squareJ.magnetCount = squareJ.magnetCount + 1;
+		        		}
+		        		if(overlap == false)
+		        		{
+		        			squareJ.magnetCount = 0;
+		        			magnetI.squareCount = 0;
+		        		}
+		           	}
+	        
+	//        	If the magnet collides with no other squares, its counter
+	//        	is reset to 0
+	        	if(glitching == false)
+	        	{
+	        		magnetI.squareCount = 0;
+	        		magnetI.glitch = 0;
+	        	}
+	        }
+        }
+        
+//      This is the generate new square code
+        List<TouchEvent> touchEvents = game.getInput().getTouchEvents();
+        int len = touchEvents.size();
+
+        for(int i = 0; i < len; i++) 
+        {
+        	TouchEvent event = touchEvents.get(i);
+        	
+            	if((event.type == TouchEvent.TOUCH_UP)) 
+	            {
+//      The Touch Event is definitely a Touch UP
+
+//            		This code checks to see whether the squares should be cleared
+            		int localCheck = localeCheck(event.x, event.y);
+            		if(localCheck == 1)
+            		{
+//            			If true, the squares are sent off screen
+            			for(int k = 0; k < shapes.size(); k++)
+            			{
+            				Square squareTeleport = (Square)shapes.get(k);
+							squareTeleport = teleport(squareTeleport);
+            			}
+            			if(difLevel == 0
+            					&& magnetsFree == true)
+            			{	
+            				for(int k = 0; k < magnets.size(); k++)
+	            			{
+	            				Magnet magnetTeleport = (Magnet)magnets.get(k);
+	            				magnetTeleport = teleportM(magnetTeleport);
+	            			}
+            			}
+            			clear = true;
+            			clearM = true;
+            			currentNumSquares = 0;
+            			currentNumMagnets = 0;
+            		}
+//            		If the toggle was pressed, change release mode
+            		if(localCheck == 2 && developer == true)
+            		{
+            			if(nightly == true)
+            			{
+            				nightly = false;
+            			}
+            			else if(nightly == false)
+            			{
+            				nightly = true;
+            			}
+            		}
+//            		If the magnet button was pressed, generate the magnets
+            		else if(localCheck == 3
+            				&& nightly == true
+            				&& magnetEnable == true
+            				&& currentNumMagnets == 0)
+            		{
+	            		for(int m = 0; m < maxNumMagnets; m++)
+	            		{
+	            			Magnet magnetM = new Magnet(0, (m+1) * UtilConstants.SCREEN_HEIGHT / (maxNumMagnets+1) - magnetImage.getHeight() / 2, 1, 0, currentNumMagnets, magnetImage);
+	            			magnets.add(magnetM);
+	            			currentNumMagnets = currentNumMagnets + 1;
+	            		}
+            		}
+//            		If the easterEgg was pressed, change the color inversion
+            		else if (localCheck == 4)
+            		{
+            			if(invert == false)
+            			{
+            				invert = true;
+            			}
+            			else if(invert == true)
+            			{
+            				invert = false;
+            			}
+            		}
+//            		If the difficulty toggle was pressed, toggle the difficulty
+            		else if(localCheck == 6)
+            		{
+            			if(difLevel == 0)
+            			{
+            				difLevel = 1;
+            				magnetEnable = true;
+            			}
+            			else if(difLevel == 1)
+            			{
+            				difLevel = 0;
+            				magnetEnable = false;
+            			}
+            		}
+//            		If the magnet enable toggle was pressed, toggle wheter the magnets are enabled
+            		else if(localCheck == 5)
+            		{
+            			if(magnetEnable == true)
+            			{
+            				magnetEnable = false;
+            			}
+            			else if(magnetEnable == false)
+            			{
+            				magnetEnable = true;
+            			}
+            		}
+//            		If the magnet free toggle was pressed, toggle whether the magnets are free to move
+            		else if(localCheck == 7
+            				&& magnetEnable == true)
+            		{
+            			if(magnetsFree == false)
+            			{
+            				magnetsFree = true;
+            			}
+            			else if(magnetsFree == true)
+            			{
+            				magnetsFree = false;
+            			}
+            		}
+//            		If the clear button has not been pressed, then
+            		else if(localCheck == 0)
+            		{
+//            		If there are no squares currently, then
+            			if(shapes.size() == 0 && clear == false)
+            			{
+            				double Ax = event.x-(image.getWidth()/2);
+            				double Ay = event.y-(image.getHeight()/2);
+
+               		    	double AxVector = random.nextInt(MAX_INITIAL_SPEED)+1;
+               		    	double AyVector = random.nextInt(MAX_INITIAL_SPEED)+1;
+                		
+               		    	int name = currentNumSquares;
+                		
+               		    	Square squareA = new Square(Ax, Ay, AxVector, AyVector, name, image, 0);
+               		    	currentNumSquares = currentNumSquares + 1;
+                       		shapes.add(squareA);
+            			}
+//            		If there is atleast 1 shape,
+//            		And clear is set to false (no squares off screen)
+            			else if(shapes.size() >= 1 && clear == false)
+	            		{
+	            			touchTrueAlpha = false;
+	            			touchTrueBeta = false;
+//	            			This checks to see whether any squares
+//	            			were clicked on
+	            			for(int k = 0; k + 1 <= shapes.size() - 1; k++)
+	            			{
+	            				Square squareK = (Square)shapes.get(k);
+	            				boolean touchShape = touchShape(squareK.x, squareK.y, image.getWidth(), image.getHeight(), event.x, event.y);
+	            				if(touchShape == true)
+	                			{
+	            					touchTrue = true;
+	                				touchTrueAlpha = true;
+	                				errorA = true;
+	//                				shapes.remove(squareK);
+	                			}
+	            			}
+
+//	            			If a square was clicked on, then increase the score
+	            			if(touchTrueAlpha == true)
+	            			{
+	            				score = score + 1;
+	            			}
+//	            			If not, then check for any Nomed squares
+                			
+                			else if(touchTrueAlpha == false)
+	            			{
+//    	            			Check to see wheter any magnets were pressed
+                				for(int k = 0; k + 1 <= magnets.size() - 1; k++)
+    	            			{
+    	            				Magnet magnetK = (Magnet)magnets.get(k);
+    	            				boolean touchShape = touchShape(magnetK.x, magnetK.y, magnetImage.getWidth(), magnetImage.getHeight(), event.x, event.y);
+    	            				if(touchShape == true)
+    	                			{
+    	                				touchTrueBeta = true;
+    	                				errorA = true;
+    	                			}
+    	            			}
+//    	            			If a magnet was pressed, teleport the magnet
+                				if(touchTrueBeta == true && magnetsFree == true)
+    	            			{
+    	            				Magnet magnetTeleport = (Magnet)magnets.get(0);
+    	            				teleportM(magnetTeleport);
+    	            			}
+//    	            			If not, make new squares
+                				else if(touchTrueBeta == false)
+    	            			{
+	    	            			if(shapes.size() <= currentNumSquares)
+	                				{
+			            				double Ax = event.x-(image.getWidth()/2);
+			                			double Ay = event.y-(image.getHeight()/2);
+			                   		    double AxVector = random.nextInt(MAX_INITIAL_SPEED)+1;
+			                   		   	double AyVector = random.nextInt(MAX_INITIAL_SPEED)+1;
+			                    		
+			                   		    int name = currentNumSquares;
+			                    		
+			                   		   	Square squareA = new Square(Ax, Ay, AxVector, AyVector, name, image, 0);
+			                   		   	currentNumSquares = currentNumSquares + 1;
+			                       		shapes.add(squareA);
+			                       		errorA = false;
+			                       		score = score -1;
+		            				}
+	                				else
+	                				{
+	                					int a = 0;
+	                					for(int z = 0; z < shapes.size(); z ++)
+	                					{
+	                						Square squareZ = (Square)shapes.get(z);
+	                						if(squareZ.teleport == true)
+	                						{
+	                							a = squareZ.name;
+	                						}
+	                					}
+	    	            				Square squareReturn = (Square)shapes.get(currentNumSquares);
+	    	            				squareReturn.x = event.x-(image.getWidth()/2);
+	    		            			squareReturn.y = event.y-(image.getHeight()/2);
+	    		               		    squareReturn.xVector = random.nextInt(MAX_INITIAL_SPEED)+1;
+	    		               		   	squareReturn.yVector = random.nextInt(MAX_INITIAL_SPEED)+1;
+	    		                		squareReturn.teleport = false;
+	    		                		squareReturn.overEdge = 0;
+	                				}
+    	            			}
+	            			}
+	            				
+	            			
+	            		
+	            		}
+            		
+            			else if(clear == true)
+	            		{
+//            			If the squares have been cleared from the screen,then
+            				touchTrueAlpha = false;
+            				if(currentNumSquares >= 1)
+            				{
+	            				for(int k = 0; k + 1 <= shapes.size() - 1; k++)
+		            			{
+		            				Square squareK = (Square)shapes.get(k);
+		            				boolean touchShape = touchShape(squareK.x, squareK.y, image.getWidth(), image.getHeight(), event.x, event.y);
+		            				if(touchShape == true)
+		                			{
+		            					touchTrue = true;
+		                				touchTrueAlpha = true;
+		                				errorA = true;
+		//                				shapes.remove(squareK);
+		                			}
+		            			}
+            				}
+//	            			If a square was clicked on, then increase the score
+	            			if(touchTrueAlpha == true)
+	            			{
+	            				score = score + 1;
+	            			}
+	            			if(touchTrueAlpha == false)
+	            			{
+	            				Square squareReturn = (Square)shapes.get(currentNumSquares);
+	            				squareReturn.x = event.x-(image.getWidth()/2);
+		            			squareReturn.y = event.y-(image.getHeight()/2);
+		               		    squareReturn.xVector = random.nextInt(MAX_INITIAL_SPEED)+1;
+		               		   	squareReturn.yVector = random.nextInt(MAX_INITIAL_SPEED)+1;
+		                		squareReturn.teleport = false;
+		                		squareReturn.overEdge = 0;
+//	                		Adds 1 onto the onscreen square counter
+		                		currentNumSquares = currentNumSquares + 1;
+		                		score = score - 1;
+	            			}
+	            		}
+	            		if(currentNumSquares >= shapes.size())
+	            		{
+	            			clear = false;
+	            		}
+		            }
+	            }
+        }
+        
+     
+        
+        for(int i = 0;i<currentNumSquares; i++)
+        {
+        	Square squareI = (Square)shapes.get(i);
+        	if(squareI.magnetCount == 0)
+        	{
+	        	squareI.xVector = gravityCalcMethodX(squareI.xVector);
+	        	squareI.yVector = gravityCalcMethodY(squareI.yVector);
+	        }
+        }
+        if(magnetsFree == true)
+        {
+	        for(int j = 0 ; j < currentNumMagnets ; j++)
+	        {
+	        	Magnet magnetJ = (Magnet)magnets.get(j);
+	        	magnetJ.xVector = gravityCalcMethodX(magnetJ.xVector);
+	        	magnetJ.yVector = gravityCalcMethodY(magnetJ.yVector);
+	        }
+        }
+
+        //This is incase the objects bounce off the edge of the screen
+        for(int i = 0; i < currentNumSquares; i++)
+        {
+        	Square squareI = (Square)shapes.get(i);
+        	if(squareI.x < 0 && clear == false)
+        	{
+        		if (squareI.glitch == 0)
+        		{
+        			squareI.x = 0;
+        			squareI.xVector = Math.abs(squareI.xVector);
+        		}
+        	}
+        	if(squareI.x > UtilConstants.SCREEN_WIDTH - image.getWidth() && clear == false)
+        	{
+        		squareI.x = UtilConstants.SCREEN_WIDTH - image.getWidth() - 1;
+        		squareI.xVector = -1 * (Math.abs(squareI.xVector));
+        	}
+       	
+        	if(squareI.y < 0 && clear == false)
+        	{
+        		squareI.y = 0;
+        		squareI.yVector = Math.abs(squareI.yVector);
+        	}
+        	if(squareI.y > UtilConstants.SCREEN_HEIGHT - image.getHeight() && clear == false)
+        	{
+        		squareI.y = UtilConstants.SCREEN_HEIGHT - image.getHeight() - 1;
+        		squareI.yVector = -1 * (Math.abs(squareI.yVector));
+        	}
+        }
+    }
+
+    //just consists of a help screen image
+    @Override
+    public void present(float deltaTime) 
+    {
+    	menuWidth = UtilConstants.SCREEN_WIDTH * 1 / 3;
+    	menuHeight = 30;;
+    	menuDoubleHeight = 2 * menuHeight;
+    	Graphics g = game.getGraphics(); 
+    	if(score >= highScore)
+        {
+        	highScore = score;
+        }
+        if(invert == false)
+        {
+        	g.drawRect(0,0, UtilConstants.SCREEN_WIDTH+1, UtilConstants.SCREEN_HEIGHT+1, Color.WHITE);
+        	g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - menuHeight, menuWidth, menuHeight, Color.DKGRAY);
+            g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - 2 * menuHeight, menuWidth, menuHeight, Color.DKGRAY);
+            g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - 3 * menuHeight, menuWidth, menuHeight, Color.DKGRAY);
+            g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - 4 * menuHeight, menuWidth, menuHeight, Color.DKGRAY);
+            g.drawText("ACTIVE", UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - 3 * menuHeight - 5, 20, Color.WHITE);
+            g.drawText("B WINCH", UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - 5, 20, Color.WHITE);
+            g.drawText("CLEAR", UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - menuHeight - 5, 20, Color.WHITE);    
+            g.drawText("LEVEL " + difLevel, UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - 2 * menuHeight - 5, 20, Color.WHITE);
+            if(nightly == true && developer == true)
+           	{
+	            g.drawRect(UtilConstants.SCREEN_WIDTH - leeWay, 0, leeWay, leeWay, Color.BLUE);
+	            g.drawRect(UtilConstants.SCREEN_WIDTH - 2 * leeWay, 0, leeWay, leeWay, Color.BLACK);
+	            g.drawRect(UtilConstants.SCREEN_WIDTH - 3 * leeWay, 0, leeWay, leeWay, Color.RED);
+	            g.drawRect(UtilConstants.SCREEN_WIDTH - 4 * leeWay, 0, leeWay, leeWay, Color.RED);
+	            if(magnetEnable == false)
+	            {
+	            	g.drawRect(UtilConstants.SCREEN_WIDTH - 3 * leeWay, 0, leeWay, leeWay, Color.BLUE);
+	            }
+	            if(magnetsFree == false)
+	            {
+	            	g.drawRect(UtilConstants.SCREEN_WIDTH - 4 * leeWay, 0, leeWay, leeWay, Color.BLUE);
+	            }
+	            double angleY = angleMethodY();
+	            g.drawText("AngleY: " + angleY, 20, 40, 20, Color.BLUE);
+	            double angleX = angleMethodX();
+	            g.drawText("AngleX: " + angleX, 20, 60, 20, Color.BLUE);
+	            g.drawText("ShapeCount " + currentNumSquares, 20, 80, 20, Color.BLUE);
+	            g.drawText("ShapeCount " + currentNumSquares, 20, 80, 20, Color.BLUE);
+	           	g.drawText("Version: " + versionNumber + " XD", 20, 100, 20, Color.RED);     
+	           	g.drawText("Touch " + touchTrue, 20, 120, 20, Color.RED);
+	           	g.drawText("Success " + errorA, 20, 140, 20, Color.RED);
+	           	g.drawText("Score: " + score, 20, 160, 20, Color.RED);
+	           	g.drawText("HighScore: " + highScore, 20, 180, 20, Color.RED);
+	           	g.drawText("Magnets " + currentNumMagnets, 20, 200, 20, Color.RED);
+	           	g.drawText("Message: " + message, 20, 220, 20, Color.RED);
+	        	if(score >= currentNumSquares + 1)
+	           	{
+	           		g.drawText("WINNING!", 20, 240, 20, Color.BLACK);	
+	           	}
+	           	if(score >= MAX_NUM_SQUARES)
+	           	{            		
+	           		g.drawText("You Have Won The Game", 20, 260, 20, Color.RED);
+	           	}
+           	}
+           	if(nightly == false)
+           	{
+           		if(developer == true)
+           		{
+           			g.drawRect(UtilConstants.SCREEN_WIDTH - leeWay, 0, leeWay, leeWay, Color.RED);
+           		}
+                g.drawText("B WINCH", UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - 5, 20, Color.WHITE);
+                g.drawText("CLEAR", UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - menuHeight - 5, 20, Color.WHITE);
+                g.drawText("LEVEL " + difLevel, UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - 2 * menuHeight - 5, 20, Color.WHITE);
+                g.drawText("ShapeCount " + currentNumSquares, 20, 40, 20, Color.BLUE);           
+    	    	g.drawText("Version: " + versionNumber + " XD", 20, 60, 20, Color.BLUE);
+    	    	g.drawText("Success " + errorA, 20, 80, 20, Color.BLUE);
+    	    	g.drawText("Score " + score, 20, 100, 20, Color.BLUE);
+    	    	g.drawText("HighScore " + highScore, 20, 120, 20, Color.BLUE);
+    	    	if(score >= currentNumSquares + 1)
+    	    	{
+    	    		g.drawText("WINNING!", 20, 140, 20, Color.BLACK);	
+    	    	}
+    	    	if(score >= MAX_NUM_SQUARES)
+    	    	{
+    	    		g.drawText("You Have Won The Game", 20, 180, 20, Color.WHITE);
+    	    	}
+           	}
+        
+        }
+        else if (invert == true)
+        {
+        	if(nightly == true)
+        	{
+        		g.drawRect(0,0, UtilConstants.SCREEN_WIDTH+1, UtilConstants.SCREEN_HEIGHT+1, Color.RED);
+            	g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - menuHeight, menuWidth, menuHeight, Color.DKGRAY);
+                g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - 2 * menuHeight, menuWidth, menuHeight, Color.DKGRAY);
+                g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - 3 * menuHeight, menuWidth, menuHeight, Color.DKGRAY);
+                g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - 4 * menuHeight, menuWidth, menuHeight, Color.DKGRAY);
+                g.drawText("ACTIVE", UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - 3 * menuHeight - 5, 20, Color.RED);
+                g.drawText("B WINCH", UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - 5, 20, Color.RED);
+                g.drawText("CLEAR", UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - menuHeight - 5, 20, Color.RED);
+                g.drawText("LEVEL " + difLevel, UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - 2 * menuHeight - 5, 20, Color.RED);
+                g.drawText("NIGHTLY", 20, 280, 70, Color.WHITE);
+        		if(developer == true)
+        		{
+        			g.drawRect(UtilConstants.SCREEN_WIDTH - leeWay, 0, leeWay, leeWay, Color.WHITE);
+        			g.drawRect(UtilConstants.SCREEN_WIDTH - 2 * leeWay, 0, leeWay, leeWay, Color.BLACK);
+        			g.drawRect(UtilConstants.SCREEN_WIDTH - 3 * leeWay, 0, leeWay, leeWay, Color.WHITE);
+        			g.drawRect(UtilConstants.SCREEN_WIDTH - 4 * leeWay, 0, leeWay, leeWay, Color.WHITE);
+        		}
+        		double angleY = angleMethodY();
+	            g.drawText("AngleY: " + angleY, 20, 40, 20, Color.WHITE);
+	            double angleX = angleMethodX();
+	            g.drawText("AngleX: " + angleX, 20, 60, 20, Color.WHITE);
+	            g.drawText("ShapeCount " + currentNumSquares, 20, 80, 20, Color.WHITE);
+	            g.drawText("ShapeCount " + currentNumSquares, 20, 80, 20, Color.WHITE);
+	        	g.drawText("Version: " + versionNumber + " XD", 20, 100, 20, Color.WHITE);
+	        	g.drawText("Touch " + touchTrue, 20, 120, 20, Color.WHITE);
+	        	g.drawText("Success " + errorA, 20, 140, 20, Color.WHITE);
+	        	g.drawText("Score: " + score, 20, 160, 20, Color.WHITE);
+	        	g.drawText("HighScore: " + highScore, 20, 180, 20, Color.WHITE);
+	        	g.drawText("Magnets " + currentNumMagnets, 20, 200, 20, Color.WHITE);
+	        	g.drawText("Message: " + message, 20, 220, 20, Color.WHITE);
+	        	if(score >= currentNumSquares + 1)
+	        	{
+	        		g.drawText("WINNING!", 20, 240, 20, Color.WHITE);	
+	        	}
+	        	if(score >= MAX_NUM_SQUARES)
+	        	{
+	        		g.drawText("You Have Won The Game", 20, 260, 20, Color.WHITE);
+	        	}
+        	}
+        	if(nightly == false)
+        	{
+        		g.drawRect(0,0, UtilConstants.SCREEN_WIDTH+1, UtilConstants.SCREEN_HEIGHT+1, Color.BLUE);
+            	g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - menuHeight, menuWidth, menuHeight, Color.DKGRAY);
+                g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - 2 * menuHeight, menuWidth, menuHeight, Color.DKGRAY);
+                g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - 3 * menuHeight, menuWidth, menuHeight, Color.DKGRAY);
+                g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - 4 * menuHeight, menuWidth, menuHeight, Color.DKGRAY);
+                g.drawText("ACTIVE", UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - 3 * menuHeight - 5, 20, Color.BLUE);
+                g.drawText("B WINCH", UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - 5, 20, Color.BLUE);
+                g.drawText("CLEAR", UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - menuHeight - 5, 20, Color.BLUE);
+                g.drawText("LEVEL " + difLevel, UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - 2 * menuHeight - 5, 20, Color.BLUE);
+                if(developer == true)
+        		{
+        			g.drawRect(UtilConstants.SCREEN_WIDTH - leeWay, 0, leeWay, leeWay, Color.WHITE);
+        		}
+                g.drawText("ShapeCount " + currentNumSquares, 20, 40, 20, Color.WHITE);           
+            	g.drawText("Version: " + versionNumber + " XD", 20, 60, 20, Color.WHITE);
+            	g.drawText("Success " + errorA, 20, 80, 20, Color.WHITE);
+            	g.drawText("Score " + score, 20, 100, 20, Color.WHITE);
+            	g.drawText("HighScore " + highScore, 20, 120, 20, Color.WHITE);
+            	g.drawText("STABLE", 20, 280, 70, Color.WHITE);
+            	if(score >= currentNumSquares + 1)
+            	{
+            		g.drawText("WINNING!", 20, 140, 20, Color.WHITE);	
+            	}
+            	if(score >= MAX_NUM_SQUARES)
+            	{
+            		g.drawText("You Have Won The Game", 20, 180, 20, Color.WHITE);
+            	}
+        	}
+        }
+        
+//      This code draws the squares onto the screen
+        for (int b=0;b<currentNumSquares;b++) 
+        {
+        	Square squareB = (Square)shapes.get(b);
+        	if(squareB.teleport == false)
+        	{
+        		squareB.drawSquare(g);
+        	}
+        }
+        for (int c=0; c<currentNumMagnets; c++)
+        {
+        	if(magnetEnable == true)
+        	{
+		        Magnet magnetC = (Magnet)magnets.get(c);
+		        if(nightly == true && invert == false)
+		        {
+		        	g.drawRect((int)magnetC.x, (int)magnetC.y, magnetC.magnetImage.getWidth(), magnetC.magnetImage.getHeight(), Color.RED);
+		        }
+		        else if(nightly == false && invert == false)
+		        {
+		        	g.drawRect((int)magnetC.x, (int)magnetC.y, magnetC.magnetImage.getWidth(), magnetC.magnetImage.getHeight(), Color.BLUE);
+		        }
+		        else if(invert == true)
+		        {
+		        	g.drawRect((int)magnetC.x, (int)magnetC.y, magnetC.magnetImage.getWidth(), magnetC.magnetImage.getHeight(), Color.WHITE);
+		        }
+        	}
+        }
+    }
+    
+    public boolean touchShape (double squareX, double squareY, int width, int height, int touchX, int touchY)
+    {
+    	boolean touchShape = false;
+    	if(touchX >= squareX 
+    			&& touchX <= squareX + width
+    			&& touchY >= squareY
+    			&& touchY <= squareY + height)
+    	{
+    		touchShape = true;
+    	}
+    	return touchShape;
+    }
+    
+    public int localeCheck(int eventX, int eventY)
+    {
+    	int localCheck = 0;
+    	if(eventX >= UtilConstants.SCREEN_WIDTH - menuWidth
+    			&& eventY >= UtilConstants.SCREEN_HEIGHT - menuDoubleHeight
+    			&& eventY <= UtilConstants.SCREEN_HEIGHT - menuHeight)
+    	{
+    		localCheck = 1;
+    	}
+    	if(eventX >= UtilConstants.SCREEN_WIDTH - leeWay
+    			&& eventY <= leeWay)
+    	{
+    		localCheck = 2;
+    	}
+    	if(eventX >= UtilConstants.SCREEN_WIDTH - menuWidth
+    			&& eventY <= UtilConstants.SCREEN_HEIGHT - menuHeight * 3
+    			&& eventY >= UtilConstants.SCREEN_HEIGHT - menuHeight * 4)
+    	{
+    		localCheck = 3;
+    	}
+    	if(eventX >= UtilConstants.SCREEN_WIDTH - menuWidth
+    			&& eventY >= UtilConstants.SCREEN_HEIGHT - menuHeight)
+    	{
+    		localCheck = 4;
+    	}
+    	if(eventX >= UtilConstants.SCREEN_WIDTH - 3 * leeWay
+    			&& eventX <= UtilConstants.SCREEN_WIDTH - 2 * leeWay
+    			&& eventY <= leeWay)
+    	{
+    		localCheck = 5;
+    	}
+    	if(eventX >= UtilConstants.SCREEN_WIDTH - menuWidth
+    			&& eventY >= UtilConstants.SCREEN_HEIGHT - 3 * menuHeight
+    			&& eventY <= UtilConstants.SCREEN_HEIGHT - 2 * menuHeight)
+    	{
+    		localCheck = 6;
+    	}
+    	if(eventX >= UtilConstants.SCREEN_WIDTH - (leeWay * 4)
+    			&& eventX <= UtilConstants.SCREEN_WIDTH - (leeWay * 3)
+    			&& eventY <= leeWay)
+    	{
+    		localCheck = 7;
+    	}
+    	return localCheck;
+    }
+    
+    public static Square teleport(Square squareTeleport)
+    {
+    	squareTeleport.x = UtilConstants.SCREEN_WIDTH * 3;
+    	squareTeleport.y = UtilConstants.SCREEN_HEIGHT * 3;
+    	squareTeleport.xVector = 0;
+    	squareTeleport.yVector = 0;
+    	squareTeleport.teleport = true;
+    	return squareTeleport;
+    }
+    
+    public static Magnet teleportM(Magnet magnetTeleport)
+    {
+    	magnetTeleport.x = UtilConstants.SCREEN_WIDTH * 6;
+    	magnetTeleport.y = UtilConstants.SCREEN_HEIGHT * 6;
+    	magnetTeleport.xVector = 0;
+    	magnetTeleport.yVector = 0;
+    	magnetTeleport.teleport = true;
+    	return magnetTeleport;
+    }
+    
+    public double gravityCalcMethodY(double originalYVector)
+    {    	
+    	double gravityVectorY = 0;
+    	double angle = 0;
+    	angle = angleMethodY();
+    	gravityVectorY = gravityCalcGeneric(angle, originalYVector);
+    	return gravityVectorY;
+    }
+    
+    public double gravityCalcMethodX(double originalXVector)
+    {
+    	double gravityVectorX = 0;
+    	double angle = 0;
+    	angle = angleMethodX();
+    	gravityVectorX = gravityCalcGeneric(angle, originalXVector);
+    	return gravityVectorX;
+    }
+    
+    public double gravityCalcGeneric(double angle, double originalVectorGeneric)
+    {
+    	double gravity = 0.1;
+    	double returnVectorGeneric = 0;
+    	returnVectorGeneric = originalVectorGeneric + ((gravity/10) * angle);
+    	return returnVectorGeneric;
+    }
+    
+    public double angleMethodY()
+    {
+    	double angle = 0;
+        float accelX = game.getInput().getAccelX();
+        float accelY = game.getInput().getAccelY();
+        float accelZ = game.getInput().getAccelZ();
+
+    	if(accelY <= 1 && accelY >= -1)
+    	{
+    		angle = 0;
+    	}
+    	else if(accelZ >= -10 && accelZ < -10 + 1)
+    	{
+    		angle = 0;
+    	}
+    	else if(accelY > 0 + 1 && accelY <= 2) 
+    	{
+    		angle = 2;
+    	}
+    	else if(accelY > 0 + 2 && accelY <= 3) 
+    	{
+    		angle = 3;
+    	}
+    	else if(accelY > 0 + 3 && accelY <= 4) 
+    	{
+    		angle = 4;
+    	}
+    	else if(accelY > 0 + 4 && accelY <= 5) 
+    	{
+    		angle = 5;
+    	}
+    	else if(accelY > 0 + 5 && accelY <= 6) 
+    	{
+    		angle = 6;
+    	}
+    	else if(accelY > 0 + 6 && accelY <= 7) 
+    	{
+    		angle = 7;
+    	}
+    	else if(accelY > 0 + 7 && accelY <= 8) 
+    	{
+    		angle = 8;
+    	}
+    	else if(accelY > 0 + 8 && accelY <= 9) 
+    	{
+    		angle = 9;
+    	}
+    	else if(accelY > 0 + 9 && accelY <= 10) 
+    	{
+    		angle = 10;
+    	}
+    	else if(accelY >= -2 && accelY < -1)
+    	{
+    		angle = -2;
+    	}
+    	else if(accelY >= -3 && accelY < -2)
+    	{
+    		angle = -3;
+    	}
+    	else if(accelY >= -4 && accelY < -3)
+    	{
+    		angle = -4;
+    	}
+    	else if(accelY >= -5 && accelY < -4)
+    	{
+    		angle = -5;
+    	}
+    	else if(accelY >= -6 && accelY < -5)
+    	{
+    		angle = -6;
+    	}
+    	else if(accelY >= -7 && accelY < -6)
+    	{
+    		angle = -7;
+    	}
+    	else if(accelY >= -8 && accelY < -7)
+    	{
+    		angle = -8;
+    	}
+    	else if(accelY >= -9 && accelY < -8)
+    	{
+    		angle = -9;
+    	}
+    	else if(accelY >= -10 && accelY < -9)
+    	{
+    		angle = -10;
+    	}
+
+	    return angle;
+	    
+    }
+    
+    public double angleMethodX()
+    {
+        double angleX = 0;
+    	double accelX = game.getInput().getAccelX();
+        double accelY = game.getInput().getAccelY();
+        double accelZ = game.getInput().getAccelZ();
+    	if(accelX < -9 && accelX >= -10)
+    	{
+    		angleX = 10;
+    	}
+    	if(accelX < -8 && accelX >= -9)
+    	{
+    		angleX = 9;
+    	}
+    	if(accelX < -7 && accelX >= -8)
+    	{
+    		angleX = 8;
+    	}
+    	if(accelX < -6 && accelX >= -7)
+    	{
+    		angleX = 7;
+    	}
+    	if(accelX < -5 && accelX >= -6)
+    	{
+    		angleX = 6;
+    	}
+    	if(accelX < -4 && accelX >= -5)
+    	{
+    		angleX = 5;
+    	}
+    	if(accelX < -3 && accelX >= -4)
+    	{
+    		angleX = 4;
+    	}
+    	if(accelX < -2 && accelX >= -3)
+    	{
+    		angleX = 3;
+    	}
+    	if(accelX < -1 && accelX >= -2)
+    	{
+    		angleX = 2;
+    	}
+    	if(accelX <= 1 && accelX >= -1)
+    	{
+    		angleX = 0;
+    	}
+    	if(accelX <= 2 && accelX > 1)
+    	{
+    		angleX = -2;
+    	}
+    	if(accelX <= 3 && accelX > 2)
+    	{
+    		angleX = -3;
+    	}
+    	if(accelX <= 4 && accelX > 3)
+    	{
+    		angleX = -4;
+    	}
+    	if(accelX <= 5 && accelX > 4)
+    	{
+    		angleX = -5;
+    	}
+    	if(accelX <= 6 && accelX > 5)
+    	{
+    		angleX = -6;
+    	}
+    	if(accelX <= 7 && accelX > 6)
+    	{
+    		angleX = -7;
+    	}
+    	if(accelX <= 8 && accelX > 7)
+    	{
+    		angleX = -8;
+    	}
+    	if(accelX <= 9 && accelX > 8)
+    	{
+    		angleX = -9;
+    	}
+    	if(accelX <= 10 && accelX > 9)
+    	{
+    		angleX = -10;
+    	}
+    	return angleX;
+    }
+    
+    @Override
+    public void pause() {
+
+    }
+
+    @Override
+    public void resume() {
+
+    }
+
+    @Override
+    public void dispose() {
+
+    }
+}
