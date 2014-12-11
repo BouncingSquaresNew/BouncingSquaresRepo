@@ -1,0 +1,12 @@
+package graphics.demo.game;
+
+import graphics.demo.framework.Graphics;
+
+/* A star is effectively a motionless supermassive object, that will exist in the game
+ * A star's mass can be specified by an input paramater, and so effectively can be increased
+ * up to any size required :)
+ */
+
+public class Star {
+
+}

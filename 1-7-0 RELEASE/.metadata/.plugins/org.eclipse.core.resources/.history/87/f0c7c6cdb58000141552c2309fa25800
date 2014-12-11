@@ -1,0 +1,28 @@
+07/03/2014 - BenWinchester
+	*Removal of the clear variable
+	*Creation of a change log
+	*Methodisation of the code and re-organisation
+	*Square code organised
+	*Magnet code organised
+	*Comments added so that the code makes sense :)
+	
+08/03/2014 - BenWinchester
+	*Correction of code
+	*Full methodisation complete
+	*Magnet logic needs some fixing
+	*Main Method reduced
+	*Play Store listing upadted
+	
+v1.6.5 [BETA] - Ben Winchester
+	*Added Christams Theme
+	
+v1.6.6 [ALPHA] - Ben Winchester
+	*Added restitution and momentum for collisions
+	*Improved the colour scheme :)
+	*Added planetary motion!! (Sort of, but it needs a LOT of work) :D
+	
+v1.6.6.1 [ALPHA] - Ben Winchester
+	*Hopefully managed to fix the bugs :)
+	
+v1.6.7 [ALPHA] - Ben Winchester
+	*Bugs actually fixed this time :)
