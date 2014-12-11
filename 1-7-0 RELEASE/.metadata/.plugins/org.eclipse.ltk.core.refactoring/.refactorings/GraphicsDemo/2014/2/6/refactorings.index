@@ -1,0 +1,11 @@
+1391803662181	Rename local variable 'ballxVector'
+1391803728563	Rename local variable 'ballxVectorTargetSquare'
+1391803779604	Rename local variable 'squarexVectorTargetSquare'
+1391803786634	Rename local variable 'squarexVector'
+1391803796676	Rename local variable 'ballyVectorTargetSquare'
+1391874009446	Rename compilation unit 'Ball.java'
+1391875602634	Rename type 'Magnet'
+1391876169076	Copy compilation unit
+1391951717074	Rename field 'build'
+1391952121154	Rename field 'dificulty'
+1391952152637	Rename field 'difficulty'

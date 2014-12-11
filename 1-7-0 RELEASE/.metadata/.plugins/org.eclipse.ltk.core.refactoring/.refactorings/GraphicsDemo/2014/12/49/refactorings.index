@@ -1,0 +1,5 @@
+1417635825576	Delete element
+1417637034610	Rename field 'kepler'
+1417637049423	Rename field 'keplerGravityConstant'
+1417637071914	Rename method 'keplerianSquare'
+1417637089208	Rename method 'keplerToggle'

@@ -1,0 +1,98 @@
+package graphics.demo.game;
+
+import graphics.demo.framework.Graphics;
+import graphics.demo.framework.Pixmap;
+import android.graphics.Color;
+
+public class Square {
+	
+	public double x = 0;
+	public double y = 0;
+	public double xVector = 0;
+	public double yVector = 0;
+	String name = null;
+	public static Pixmap image;
+	static double BOUNCE_COEFFICIENT = 0.9;
+
+	public Square(double x, double y, double xVector, double yVector, String name, Pixmap image)
+	{
+		this.x = x;
+		this.y = y;
+		this.xVector = xVector;
+		this.yVector = yVector;
+		this.name = name;
+		this.image = image;
+	}
+	
+	public void recalculate()
+	{
+		x = x + xVector;
+		y = y + yVector;
+		
+		if(( x >= UtilConstants.SCREEN_WIDTH - image.getWidth()) || (x <= 0) )
+		{
+			xVector = xVector * -1;
+			xVector = xVector * (BOUNCE_COEFFICIENT);
+		}
+		if(( y >= UtilConstants.SCREEN_HEIGHT - image.getHeight()) || (y <= 0) )
+		{
+			yVector = yVector * -1;
+			yVector = yVector * (BOUNCE_COEFFICIENT);
+		}
+	}
+	
+	public boolean overlaps(Square targetSquare)
+	{
+		double distX;
+		double distY;
+		boolean collision;
+		
+		if(x>=targetSquare.x)
+		{
+			distX = x - targetSquare.x;
+		}
+		else
+		{
+			distX = targetSquare.x - x;
+		}
+		
+		if(y>=targetSquare.y)
+		{
+			distY = y - targetSquare.y;
+		}
+		else
+		{
+			distY = targetSquare.y - y;
+		}
+		
+		if((distX <= image.getWidth()+1) && (distY <= image.getHeight()+1))
+		{
+			collision = true;
+		}
+		else
+		{
+			collision = false;
+		}
+		return collision;
+	}
+	
+	public void collide(Square targetSquare)
+	{
+		double ballxVector = xVector;
+		double ballxVectorTargetSquare = targetSquare.xVector;
+		xVector = ballxVectorTargetSquare;
+		targetSquare.xVector = ballxVector;
+
+		double ballyVector = yVector;
+		double ballyVectorTargetSquare = targetSquare.yVector;
+		yVector = ballyVectorTargetSquare;
+		targetSquare.yVector = ballyVector;
+	}
+	
+	public void drawSquare(Graphics g)
+	{
+		g.drawPixmap(image, (int)x, (int)y);
+		g.drawText(name, (int)x, (int)y, 10, Color.BLACK);
+	}
+	
+}
