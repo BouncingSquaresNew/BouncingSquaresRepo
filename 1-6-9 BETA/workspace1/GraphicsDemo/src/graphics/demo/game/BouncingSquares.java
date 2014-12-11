@@ -56,7 +56,7 @@ public class BouncingSquares extends Screen {
 	public double timerDown = 30; //The time limit allocated for the user to reach the MaxScore (MAX_NUM_SQUARES)
 	public double gravityConstant = 0.1; //The screen's gravity constant
 	public double keplerFreeSquareGravityConstant = 10; //The Newton's G constant
-	public double solarMass = 50;
+	public double solarMass = 50; //The mass of a star
 	public static double e = 0.7; //The coefficient of restitution between the squares
 	public boolean touchTrueAlpha = false; //A variable is initialised, which will determine whether a square was pressed
 	public boolean touchTrueBeta = false; //The same as for Alpha, but for determining whether a magnet was pressed
@@ -92,7 +92,7 @@ public class BouncingSquares extends Screen {
     {    	
         super(game); //Initialises the game
         Elasticity[0] = e; //The following are values for the elasticity of the squares NB(2)
-        					  //Default value is 0
+        					  //Default value is 0.7
         Elasticity[1] = 1.3;  //These are other values in the cycle
         alphaPing();
         
@@ -155,8 +155,6 @@ public class BouncingSquares extends Screen {
 //            		And clear is set to false (no squares off screen)
              		else if(shapes.size() >= 1)
 	            	{
-	            		touchTrueAlpha = false;
-	            		touchTrueBeta = false;
 //	            		This checks to see whether any squares
 //	            		were clicked on
 //	            		If a square was clicked on, then increase the score
@@ -238,7 +236,7 @@ public class BouncingSquares extends Screen {
         for(int i = 0 ; i < removers.size() ; i ++)
         {
         	Remover removerI = (Remover)removers.get(i);
-        	shapes.remove(removerI.id);
+        	shapes.remove(removerI.id - i);
         	currentNumSquares = currentNumSquares - 1;
         }
         removers.clear();
