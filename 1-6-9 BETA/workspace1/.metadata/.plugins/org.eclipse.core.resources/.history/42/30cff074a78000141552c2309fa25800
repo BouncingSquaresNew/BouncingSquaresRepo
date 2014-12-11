@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<manifest package="bouncing.squaresnew"
+    android:versionCode="19"
+    android:versionName="1.6.8" xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-sdk
+        android:minSdkVersion="5"
+        android:targetSdkVersion="20" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>  
+   
+		<application
+        android:icon="@drawable/icon"
+        android:label="Bouncing Squares"
+        android:allowBackup="False">
+        <activity
+            android:name="graphics.demo.game.GraphicsDemo"
+            android:label="Bouncing Squares" 
+            android:configChanges="keyboard|keyboardHidden|orientation"
+            android:screenOrientation="portrait" >
+            
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+
+    
+
