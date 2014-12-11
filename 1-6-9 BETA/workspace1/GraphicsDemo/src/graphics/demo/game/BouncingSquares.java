@@ -351,7 +351,7 @@ public class BouncingSquares extends Screen {
     	else if(localCheck == 6
 		&& developer == true)
     	{
-    		difToggle(0, 2); //Toggle the difficulty between 0 and 2
+    		keplerFreeToggle(); //Toggle the difficulty between 0 and 2
     	}
 //    	If the magnet free toggle was pressed, toggle whether the magnets are free to move
     	else if(localCheck == 7
@@ -1226,6 +1226,7 @@ public class BouncingSquares extends Screen {
             g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - 2 * menuHeight, menuWidth, menuHeight, Color.rgb(47, 79, 79));
             g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - 3 * menuHeight, menuWidth, menuHeight, Color.rgb(47, 79, 79));
             g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - 4 * menuHeight, menuWidth, menuHeight, Color.rgb(47, 79, 79));
+            g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - 5 * menuHeight, menuWidth, menuHeight, Color.rgb(47, 79, 79));
             if (developer == true)
 			{
 				g.drawRect(UtilConstants.SCREEN_WIDTH - menuWidth, UtilConstants.SCREEN_HEIGHT - 5 * menuHeight, menuWidth, menuHeight, Color.rgb(47, 79, 79));
@@ -1240,10 +1241,11 @@ public class BouncingSquares extends Screen {
 			{
 				g.drawText("OFF", UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - 5 * menuHeight - 5, 20, Color.WHITE);
 			}
-//	    	If in solar system, draw the sun
+//	    	If in solar system, draw the sun, and change the toggle text
 	    	if(keplerMode == 2)
 	    	{
-	    		g.drawPixmap(sun, (UtilConstants.SCREEN_WIDTH - sun.getWidth())/2, (UtilConstants.SCREEN_HEIGHT - sun.getHeight())/2);
+	    		g.drawPixmap(sun, (UtilConstants.SCREEN_WIDTH - sun.getWidth())/2, (UtilConstants.SCREEN_HEIGHT - sun.getHeight());
+	    		
 	    	}
 	    	
 			g.drawText("B WINCH", UtilConstants.SCREEN_WIDTH - menuWidth + 5, UtilConstants.SCREEN_HEIGHT - 5, 20, Color.WHITE);
