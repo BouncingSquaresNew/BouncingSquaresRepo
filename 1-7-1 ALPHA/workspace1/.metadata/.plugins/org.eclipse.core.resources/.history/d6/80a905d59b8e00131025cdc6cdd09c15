@@ -1,0 +1,433 @@
+package graphics.demo.game;
+
+import graphics.demo.framework.Game;
+import graphics.demo.framework.Graphics;
+import graphics.demo.framework.Graphics.PixmapFormat;
+import graphics.demo.framework.Input.TouchEvent;
+import graphics.demo.framework.Pixmap;
+import graphics.demo.framework.Screen;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import android.graphics.Color;
+import android.graphics.Typeface;
+
+/* Name: MainScreen.java
+ * Date: 27/06/2013
+ * Author: Ben Winchester
+ * Purpose: shows two introductory logos before main menu - Pollux and Squarez
+ */
+
+public class BouncingSquares extends Screen { 
+
+	static int DEFAULT_NUM_SQUARES = 0;
+//	static int MAX_NUM_SQUARES = 400;
+
+	static int MAX_INITIAL_SPEED = 4;
+	
+//	This generates a new ArrayList for the values of the square objects
+	ArrayList shapes = new ArrayList();
+	
+	
+	// Arrays that hold the state (position and speed)
+	// of the squares on the screen.
+//	double[] squaresX = new double[MAX_NUM_SQUARES];
+//	double[] squaresY = new double[MAX_NUM_SQUARES];
+//	double[] squaresVectorX = new double[MAX_NUM_SQUARES];
+//	double[] squaresVectorY = new double[MAX_NUM_SQUARES];
+	
+	static int currentNumSquares = DEFAULT_NUM_SQUARES;
+	
+	public static Pixmap image;
+			
+    public BouncingSquares(Game game) 
+    {    	
+        super(game);
+        
+        Random random = new Random();
+        
+    	Graphics g = game.getGraphics();    	
+		image = g.newPixmap("ball.png", PixmapFormat.ARGB4444);
+		Assets.font = Typeface.createFromAsset(game.getAssets(), "fonts/electrolize.ttf");  
+
+		//This assigns the initial values for the squares coordinates and vectors.
+        for (int b=0;b<currentNumSquares;b++) {
+
+        	
+        	double x = random.nextInt(UtilConstants.SCREEN_WIDTH-image.getWidth())+1;
+        	double y = random.nextInt(UtilConstants.SCREEN_HEIGHT-image.getHeight())+1;
+        
+        	double xVector = random.nextInt(MAX_INITIAL_SPEED)+1;
+        	double yVector = random.nextInt(MAX_INITIAL_SPEED)+1;
+        	String name = ""+b;
+        	
+        	Square square = new Square(x, y, xVector, yVector, name, image);
+        	shapes.add(square);
+        }
+        
+        //This makes sure that none of the squares are initially colliding, and then adjusts their positioins to compensate.
+        for(int i = 0; i < currentNumSquares;i++)
+        {
+        	for(int j = 0 + i + 1; j < currentNumSquares; j++)
+        	{
+        		Square squareI = (Square)shapes.get(i);
+        		Square squareJ = (Square)shapes.get(j);
+        		
+	        	if(((squareI.x >= squareJ.x - image.getWidth() ) && squareI.x <= squareJ.x + image.getWidth()) &&
+	        	   ((squareI.y >= squareJ.y - image.getHeight()) && squareI.y <= squareJ.y + image.getHeight()))
+	        	{
+	        		while((squareI.x >= squareJ.x-image.getWidth())&& squareI.x <= squareJ.x+image.getWidth())
+	        		{
+	        			squareI.x = squareI.x + image.getWidth() + 1;
+	        		}
+	        	}
+        	}
+        }
+    }
+    
+    //The intro part only takes a couple of seconds and isn't skippable 
+    @Override 
+    public void update(float deltaTime) 
+    {
+        Random random = new Random();
+        
+//      This code recalculates the squares' positions and their bouncing
+        for(int i = 0; i < currentNumSquares; i++)
+        {
+        	Square squareI = (Square)shapes.get(i);
+        	squareI.recalculate();
+        }
+        
+        for(int i = 0 ; i < currentNumSquares; i ++)
+        {
+        	Square squareI = (Square)shapes.get(i);
+        	for(int j = i + 1 ; j < currentNumSquares; j++)
+        	{
+        		Square squareJ = (Square)shapes.get(j);
+        		if(squareI.overlaps(squareJ) == true)
+        		{
+        			squareI.collide(squareJ);
+        		}
+        	}
+        }
+        
+//      This is the generate new square code
+        List<TouchEvent> touchEvents = game.getInput().getTouchEvents();
+        int len = touchEvents.size();
+
+        for(int i = 0; i < len; i++) 
+        {
+        	TouchEvent event = touchEvents.get(i);
+        	
+            	if((event.type == TouchEvent.TOUCH_UP)) 
+	            {
+//            		for(int k = 0 ; k < currentNumSquares; k++)
+//            		{
+//            			Square squareK = (Square)shapes.get(k);
+//            			if((event.x >= squareK.x) && (event.x <= squareK.x + image.getWidth()) && (event.y >= squareK.y) && (event.y <= squareK.y + image.getWidth()))
+//            			{
+//            				shapes.remove(k);
+//            			}
+//            			else
+//            			{
+            				double Ax = event.x-(image.getWidth()/2);
+                			double Ay = event.y-(image.getHeight()/2);
+
+                			double AxVector = random.nextInt(4)+1;
+                			double AyVector = random.nextInt(4)+1;
+                		
+                			String name = ""+currentNumSquares;
+                		
+                			Square squareA = new Square(Ax, Ay, AxVector, AyVector, name, image);
+                			currentNumSquares = currentNumSquares + 1;
+                			
+                			shapes.add(squareA);
+//            			}
+//            		}      
+	            }
+        }
+        
+     
+        
+        for(int i = 0;i<currentNumSquares; i++)
+        {
+        	Square squareI = (Square)shapes.get(i);
+        	squareI.xVector = gravityCalcMethodX(squareI.xVector);
+        	squareI.yVector = gravityCalcMethodY(squareI.yVector);
+        }
+
+        //This is incase the objects bounce off the edge of the screen
+        for(int i = 0; i < currentNumSquares; i++)
+        {
+        	Square squareI = (Square)shapes.get(i);
+        	if(squareI.x < 0)
+        	{
+        		squareI.x = 0;
+        		squareI.xVector = Math.abs(squareI.xVector);
+        	}
+        	if(squareI.x > UtilConstants.SCREEN_WIDTH - image.getWidth())
+        	{
+        		squareI.x = UtilConstants.SCREEN_WIDTH - image.getWidth() - 1;
+        		squareI.xVector = -1 * (Math.abs(squareI.xVector));
+        	}
+       	
+        	if(squareI.y < 0)
+        	{
+        		squareI.y = 0;
+        		squareI.yVector = Math.abs(squareI.yVector);
+        	}
+        	if(squareI.y > UtilConstants.SCREEN_HEIGHT - image.getHeight())
+        	{
+        		squareI.y = UtilConstants.SCREEN_HEIGHT - image.getHeight() - 1;
+        		squareI.yVector = -1 * (Math.abs(squareI.yVector));
+        	}
+        }
+    }
+
+    //just consists of a help screen image
+    @Override
+    public void present(float deltaTime) 
+    {
+        float accelX = game.getInput().getAccelX();
+        float accelY = game.getInput().getAccelY();
+        float accelZ = game.getInput().getAccelZ();
+    	
+    	Graphics g = game.getGraphics();      
+        g.drawRect(0,0, UtilConstants.SCREEN_WIDTH+1, UtilConstants.SCREEN_HEIGHT+1, Color.WHITE);
+        
+//      This code draws the squares onto the screen
+        for (int b=0;b<currentNumSquares;b++) 
+        {
+        	Square squareB = (Square)shapes.get(b);
+        	squareB.drawSquare(g);
+        }
+
+//		This code displays the tilt of the screen as an angle interger
+        double angleY = angleMethodY();
+        g.drawText("AngleY: " + angleY, 20, 40, 20, Color.BLUE);
+        double angleX = angleMethodX();
+        g.drawText("AngleX: " + angleX, 20, 60, 20, Color.BLUE);
+        
+
+    }
+
+    public double gravityCalcMethodY(double originalYVector)
+    {
+    	double gravityVectorY = 0;
+    	double angle = 0;
+    	angle = angleMethodY();
+    	gravityVectorY = gravityCalcGeneric(angle, originalYVector);
+    	return gravityVectorY;
+    }
+    
+    public double gravityCalcMethodX(double originalXVector)
+    {
+    	double gravityVectorX = 0;
+    	double angle = 0;
+    	angle = angleMethodX();
+    	gravityVectorX = gravityCalcGeneric(angle, originalXVector);
+    	return gravityVectorX;
+    }
+    
+    public double gravityCalcGeneric(double angle, double originalVectorGeneric)
+    {
+    	double gravity = 0.1;
+    	double returnVectorGeneric = 0;
+    	returnVectorGeneric = originalVectorGeneric + ((gravity/10) * angle);
+    	return returnVectorGeneric;
+    }
+    
+    public double angleMethodY()
+    {
+    	double angle = 0;
+        float accelX = game.getInput().getAccelX();
+        float accelY = game.getInput().getAccelY();
+        float accelZ = game.getInput().getAccelZ();
+
+    	if(accelY <= 1 && accelY >= -1)
+    	{
+    		angle = 0;
+    	}
+    	else if(accelZ >= -10 && accelZ < -10 + 1)
+    	{
+    		angle = 0;
+    	}
+    	else if(accelY > 0 + 1 && accelY <= 2) 
+    	{
+    		angle = 2;
+    	}
+    	else if(accelY > 0 + 2 && accelY <= 3) 
+    	{
+    		angle = 3;
+    	}
+    	else if(accelY > 0 + 3 && accelY <= 4) 
+    	{
+    		angle = 4;
+    	}
+    	else if(accelY > 0 + 4 && accelY <= 5) 
+    	{
+    		angle = 5;
+    	}
+    	else if(accelY > 0 + 5 && accelY <= 6) 
+    	{
+    		angle = 6;
+    	}
+    	else if(accelY > 0 + 6 && accelY <= 7) 
+    	{
+    		angle = 7;
+    	}
+    	else if(accelY > 0 + 7 && accelY <= 8) 
+    	{
+    		angle = 8;
+    	}
+    	else if(accelY > 0 + 8 && accelY <= 9) 
+    	{
+    		angle = 9;
+    	}
+    	else if(accelY > 0 + 9 && accelY <= 10) 
+    	{
+    		angle = 10;
+    	}
+    	else if(accelY >= -2 && accelY < -1)
+    	{
+    		angle = -2;
+    	}
+    	else if(accelY >= -3 && accelY < -2)
+    	{
+    		angle = -3;
+    	}
+    	else if(accelY >= -4 && accelY < -3)
+    	{
+    		angle = -4;
+    	}
+    	else if(accelY >= -5 && accelY < -4)
+    	{
+    		angle = -5;
+    	}
+    	else if(accelY >= -6 && accelY < -5)
+    	{
+    		angle = -6;
+    	}
+    	else if(accelY >= -7 && accelY < -6)
+    	{
+    		angle = -7;
+    	}
+    	else if(accelY >= -8 && accelY < -7)
+    	{
+    		angle = -8;
+    	}
+    	else if(accelY >= -9 && accelY < -8)
+    	{
+    		angle = -9;
+    	}
+    	else if(accelY >= -10 && accelY < -9)
+    	{
+    		angle = -10;
+    	}
+
+	    return angle;
+	    
+    }
+    
+    public double angleMethodX()
+    {
+        double angleX = 0;
+    	double accelX = game.getInput().getAccelX();
+        double accelY = game.getInput().getAccelY();
+        double accelZ = game.getInput().getAccelZ();
+    	if(accelX < -9 && accelX >= -10)
+    	{
+    		angleX = 10;
+    	}
+    	if(accelX < -8 && accelX >= -9)
+    	{
+    		angleX = 9;
+    	}
+    	if(accelX < -7 && accelX >= -8)
+    	{
+    		angleX = 8;
+    	}
+    	if(accelX < -6 && accelX >= -7)
+    	{
+    		angleX = 7;
+    	}
+    	if(accelX < -5 && accelX >= -6)
+    	{
+    		angleX = 6;
+    	}
+    	if(accelX < -4 && accelX >= -5)
+    	{
+    		angleX = 5;
+    	}
+    	if(accelX < -3 && accelX >= -4)
+    	{
+    		angleX = 4;
+    	}
+    	if(accelX < -2 && accelX >= -3)
+    	{
+    		angleX = 3;
+    	}
+    	if(accelX < -1 && accelX >= -2)
+    	{
+    		angleX = 2;
+    	}
+    	if(accelX <= 1 && accelX >= -1)
+    	{
+    		angleX = 0;
+    	}
+    	if(accelX <= 2 && accelX > 1)
+    	{
+    		angleX = -2;
+    	}
+    	if(accelX <= 3 && accelX > 2)
+    	{
+    		angleX = -3;
+    	}
+    	if(accelX <= 4 && accelX > 3)
+    	{
+    		angleX = -4;
+    	}
+    	if(accelX <= 5 && accelX > 4)
+    	{
+    		angleX = -5;
+    	}
+    	if(accelX <= 6 && accelX > 5)
+    	{
+    		angleX = -6;
+    	}
+    	if(accelX <= 7 && accelX > 6)
+    	{
+    		angleX = -7;
+    	}
+    	if(accelX <= 8 && accelX > 7)
+    	{
+    		angleX = -8;
+    	}
+    	if(accelX <= 9 && accelX > 8)
+    	{
+    		angleX = -9;
+    	}
+    	if(accelX <= 10 && accelX > 9)
+    	{
+    		angleX = -10;
+    	}
+    	return angleX;
+    }
+    
+    @Override
+    public void pause() {
+
+    }
+
+    @Override
+    public void resume() {
+
+    }
+
+    @Override
+    public void dispose() {
+
+    }
+}
