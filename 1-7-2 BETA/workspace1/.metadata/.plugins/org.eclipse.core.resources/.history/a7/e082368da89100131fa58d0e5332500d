@@ -1,0 +1,213 @@
+package graphics.demo.game;
+
+import graphics.demo.framework.Graphics;
+import graphics.demo.framework.Pixmap;
+
+import java.util.Random;
+
+import android.graphics.Color;
+
+public class Magnet {
+
+	public double x;
+	public double y;
+	public double xVector;
+	public double yVector;
+	public int name;
+	public Pixmap magnetImage;
+	public double BOUNCE_COEFFICIENT = 1;
+	int stuck = 0;
+	int glitch = 0;
+	int overEdge = 0;
+	boolean teleport = false;
+	
+	
+	public Magnet(int x, int y, int xVector, int yVector, int name, Pixmap magnetImage)
+	{
+		this.x = x;
+		this.y = y;
+		this.xVector = xVector;
+		this.yVector = yVector;
+		this.name = name;
+		this.magnetImage = magnetImage;
+		this.stuck = stuck;
+		this.glitch = 0;
+	}
+	
+	public void freeze()
+	{
+		x = UtilConstants.SCREEN_WIDTH * 3;
+		y = UtilConstants.SCREEN_HEIGHT * 3;
+		xVector = 0;
+		yVector = 0;
+		teleport = true;
+	}
+	
+	public void recalculate()
+	{
+		x = x + xVector;
+		y = y + yVector;
+		boolean glitchEdge = false;
+		
+		if(overEdge == 0)
+		{
+			if((x <= 0) )
+			{
+				x = 1;
+				xVector = xVector * -1;
+				xVector = xVector * (BOUNCE_COEFFICIENT);
+				glitchEdge = true;
+			}
+			if( x >= UtilConstants.SCREEN_WIDTH - magnetImage.getWidth())
+			{
+				x = UtilConstants.SCREEN_WIDTH - magnetImage.getWidth() - 1;
+				xVector = xVector * -1;
+				xVector = xVector * (BOUNCE_COEFFICIENT);
+				glitchEdge = true;
+			}
+			if( y >= UtilConstants.SCREEN_HEIGHT - magnetImage.getHeight())
+			{
+				y = UtilConstants.SCREEN_HEIGHT - magnetImage.getHeight() - 1;
+				yVector = yVector * -1;
+				yVector = yVector * (BOUNCE_COEFFICIENT);
+				glitchEdge = true;
+			}
+			if(y <= 0)
+			{
+				y = 1;
+				yVector = yVector * -1;
+				yVector = yVector * (BOUNCE_COEFFICIENT);
+				glitchEdge = true;
+			}
+			if(glitchEdge == true)
+			{
+				overEdge = overEdge + 1;
+			}
+		}	
+		else if(overEdge >= 1)
+		{
+			if(x <= UtilConstants.SCREEN_WIDTH - magnetImage.getWidth()
+				&& x >= 0					
+				&& y <= UtilConstants.SCREEN_HEIGHT - magnetImage.getHeight()
+				&& y >= 0)
+			{
+				overEdge = 0;
+			}
+		}
+
+	}
+	
+	public boolean overlaps(Magnet targetMagnet)
+	{
+		boolean overlapsMagnet = overlapsGeneric(x, y, targetMagnet.x, targetMagnet.y);
+		return overlapsMagnet;
+	}
+	
+	public void collide(Magnet targetMagnet)
+	{
+			double magnetXVector = xVector;		
+			double magnetXVectorTargetMagnet = targetMagnet.xVector;
+			xVector = magnetXVectorTargetMagnet;
+			targetMagnet.xVector = magnetXVector;
+	
+			double magnetYVector = yVector;		
+			double magnetYVectorTargetMagnet = targetMagnet.yVector;
+			yVector = magnetYVectorTargetMagnet;
+			targetMagnet.yVector = magnetYVector;
+			
+			glitch = glitch + 1;
+			targetMagnet.glitch = targetMagnet.glitch + 1;
+	}
+	
+	public void collideGeneric(Square targetSquare)
+	{
+			double magnetXVector = xVector;		
+			double squareXVectorTargetSquare = targetSquare.xVector;
+			xVector = squareXVectorTargetSquare;
+			targetSquare.xVector = magnetXVector;
+	
+			double magnetYVector = yVector;		
+			double squareYVectorTargetSquare = targetSquare.yVector;
+			yVector = squareYVectorTargetSquare;
+			targetSquare.yVector = magnetYVector;
+			
+			glitch = glitch + 1;
+			targetSquare.glitch = targetSquare.glitch + 1;
+	}
+	
+	public void stickSquare(Square squareJ)
+	{
+		squareJ.x = x + squareJ.initMagXDif;
+		squareJ.y = y + squareJ.initMagYDif;
+		squareJ.xVector = xVector;
+		squareJ.yVector = yVector;
+		squareJ.magnetCount = squareJ.magnetCount + 1;
+	}
+	
+	public void drawMagnet(Graphics g)
+	{
+		g.drawPixmap(magnetImage, (int)x, (int)y);
+	}
+
+	public boolean nomNomNom(Square squareJ) 
+	{
+		boolean nomNomNom = overlapsGeneric(x, y, squareJ.x, squareJ.y);
+		return nomNomNom;
+	}
+	
+	public boolean overlapsGeneric(double X, double Y, double targetX, double targetY)
+	{
+		double distX;
+		double distY;
+		boolean collision = false;
+		
+		if(X>=targetX)
+		{
+			distX = X - targetX;
+		}
+		else
+		{
+			distX = targetX - X;
+		}
+		
+		if(Y >= targetY)
+		{
+			distY = Y - targetY;
+		}
+		else
+		{
+			distY = targetY - Y;
+		}
+		
+		if((distX <= magnetImage.getWidth()+1) && (distY <= magnetImage.getHeight()+1))
+		{
+			collision = true;
+		}
+		else
+		{
+			collision = false;
+		}
+		return collision;
+	}
+
+	public void dif(Square squareJ)
+	{
+		squareJ.initMagXDif = squareJ.x - x;
+		squareJ.initMagYDif = squareJ.y - y;
+	}
+	
+	public boolean onscreen()
+	{
+		boolean onscreen = true;
+		if(x >= UtilConstants.SCREEN_WIDTH
+				|| x <= 0
+				|| y >= UtilConstants.SCREEN_HEIGHT
+				|| y <= 0)
+		{
+			onscreen = false;
+			
+		}
+		return onscreen;
+	}
+	
+}

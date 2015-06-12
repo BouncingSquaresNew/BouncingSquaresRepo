@@ -1,0 +1,215 @@
+package graphics.demo.game;
+
+import graphics.demo.framework.Graphics;
+import graphics.demo.framework.Pixmap;
+import android.graphics.Color;
+
+public class Square {
+	
+	public double x = 0;
+	public double y = 0;
+	public double xVector = 0;
+	public double yVector = 0;
+	int name = 0;
+	public static Pixmap image;
+	static double BOUNCE_COEFFICIENT = 0.9;
+	public double COLLIDE_COEFFICIENT = 1;
+	public int glitch = 0;
+	public boolean teleport = false;
+	public boolean nomTeleport = false;
+	public int overEdge = 0;
+	public double initMagXDif = 0;
+	public double initMagYDif = 0;
+	public double magnetCount = 0;
+
+	public Square(double x, double y, double xVector, double yVector, int name, Pixmap image, int glitch)
+	{
+		this.x = x;
+		this.y = y;
+		this.xVector = xVector;
+		this.yVector = yVector;
+		this.name = name;
+		this.image = image;
+		this.glitch = 0;
+		this.teleport = false;
+		this.overEdge = overEdge;
+		this.nomTeleport = nomTeleport;
+		this.initMagXDif = 0;
+		this.initMagYDif = 0;
+		this.magnetCount = 0;
+	}
+	
+	public void freeze()
+	{
+		x = UtilConstants.SCREEN_WIDTH * 3;
+		y = UtilConstants.SCREEN_HEIGHT * 3;
+		xVector = 0;
+		yVector = 0;
+		teleport = true;
+	}
+	
+	public void reverseVector()
+	{
+		reverseXVector();
+		reverseYVector();
+	}
+	
+	public void reverseYVector()
+	{
+		yVector = yVector * -1 * BOUNCE_COEFFICIENT;
+	}
+	
+	public void reverseXVector()
+	{
+		xVector = xVector * -1 * BOUNCE_COEFFICIENT;
+	}
+	
+	public void collideGeneric(Magnet targetMagnet)
+	{
+			double squareXVector = xVector;		
+			double magnetXVectorTargetMagnet = targetMagnet.xVector;
+			xVector = magnetXVectorTargetMagnet;
+			targetMagnet.xVector = squareXVector;
+	
+			double squareYVector = yVector;		
+			double magnetYVectorTargetMagnet = targetMagnet.yVector;
+			yVector = magnetYVectorTargetMagnet;
+			targetMagnet.yVector = squareYVector;
+			
+			glitch = glitch + 1;
+			targetMagnet.glitch = targetMagnet.glitch + 1;
+	}
+	
+	public void recalculate()
+	{
+		x = x + xVector;
+		y = y + yVector;
+		boolean glitchEdge = false;
+		
+		if(overEdge == 0 && magnetCount == 0)
+		{
+			if(x <= 0)
+			{
+				x = 1;
+				reverseXVector();
+				glitchEdge = true;
+			}
+			if( x >= UtilConstants.SCREEN_WIDTH - image.getWidth())
+			{
+				x = UtilConstants.SCREEN_WIDTH - image.getWidth();
+				reverseXVector();
+				glitchEdge = true;
+			}
+			if(y <= 0)
+			{
+				y = 1;
+				reverseYVector();
+				glitchEdge = true;
+			}
+			if( y >= UtilConstants.SCREEN_HEIGHT - image.getHeight())
+			{
+				y = UtilConstants.SCREEN_HEIGHT - image.getHeight() - 1;
+				reverseYVector();
+				glitchEdge = true;
+			}
+			if(glitchEdge == true)
+			{
+				overEdge = overEdge + 1;
+			}
+		}
+		else if(overEdge >= 1)
+		{
+			if(x <= UtilConstants.SCREEN_WIDTH - image.getWidth()
+				&& x >= 0
+				&& y <= UtilConstants.SCREEN_HEIGHT - image.getHeight()
+				&& y >= 0)
+			{
+				overEdge = 0;
+			}
+		}
+		if(magnetCount >= 1 && overEdge >= 1)
+		{
+			teleport = true;
+		}
+	}
+	
+	public boolean overlaps(Square targetSquare)
+	{
+		double distX;
+		double distY;
+		boolean collision = false;
+		
+		if(x>=targetSquare.x)
+		{
+			distX = x - targetSquare.x;
+		}
+		else
+		{
+			distX = targetSquare.x - x;
+		}
+		
+		if(y>=targetSquare.y)
+		{
+			distY = y - targetSquare.y;
+		}
+		else
+		{
+			distY = targetSquare.y - y;
+		}
+		
+		if((distX <= image.getWidth()+1) && (distY <= image.getHeight()+1))
+		{
+			collision = true;
+		}
+		else
+		{
+			collision = false;
+		}
+		return collision;
+	}
+	
+	public void collide(Square targetSquare)
+	{
+			double squareXVector = xVector;		
+			double squareXVectorTargetSquare = targetSquare.xVector;
+			xVector = COLLIDE_COEFFICIENT * squareXVectorTargetSquare;
+			targetSquare.xVector = COLLIDE_COEFFICIENT * squareXVector;
+	
+			double squareYVector = yVector;
+			double squareYVectorTargetSquare = targetSquare.yVector;
+			yVector = COLLIDE_COEFFICIENT * squareYVectorTargetSquare;
+			targetSquare.yVector = COLLIDE_COEFFICIENT * squareYVector;
+			
+			glitch = glitch + 1;
+			targetSquare.glitch = targetSquare.glitch + 1;
+	}
+	
+	public void drawSquare(Graphics g)
+	{
+		g.drawPixmap(image, (int)x, (int)y);
+		g.drawText("" + name, (int)x, (int)y, 10, Color.BLACK);
+	}
+	
+	public void setSquare(int X, int Y, int XVector, int YVector)
+	{
+		x = X;
+		y = Y;
+		xVector = XVector;
+		yVector = YVector;
+	}
+	
+	public boolean onscreen()
+	{
+		boolean onscreen = true;
+		if(x >= UtilConstants.SCREEN_WIDTH - 2
+				|| x <= 0
+				|| y >= UtilConstants.SCREEN_HEIGHT - 2
+				|| y <= 0)
+		{
+			onscreen = false;
+			
+		}
+		return onscreen;
+	}
+	
+}
